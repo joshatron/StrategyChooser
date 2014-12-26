@@ -5,7 +5,7 @@ import java.util.Random;
 /**
  * Created by joshua on 12/18/14.
  */
-public class Main
+public class TestBackProp
 {
     public static void main(String[] args)
     {
