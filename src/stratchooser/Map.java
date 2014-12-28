@@ -8,16 +8,23 @@ import java.awt.*;
  */
 public class Map extends JLabel
 {
-    private int width, height, picWidth, picHeight;
-    private String[] map;
+    private int width, height, picWidth, picHeight, multiplier;
+    private String[] map, infoNames;
+    private float[] info;
 
-    public Map(String[] map, int width, int height)
+    public Map(String[] map, int width, int height, String[] infoNames, float[] info)
     {
         this.map = map;
         this.width = width;
         this.height = height;
-        this.picWidth = width * 5;
-        this.picHeight = height * 5;
+        this.infoNames = infoNames;
+        this.info = info;
+
+        this.picWidth = 330;
+        this.picHeight = 330 + info.length * 17 + 20;
+        this.multiplier = 1;
+        while(multiplier * width <= 300 && multiplier * height <= 300){multiplier++;}
+        multiplier--;
     }
 
     @Override
@@ -31,8 +38,14 @@ public class Map extends JLabel
     {
         super.paintComponent(backg);
 
+        backg.setColor(Color.LIGHT_GRAY);
+        backg.fillRect(0, 0, picWidth, picHeight);
+
+        int currentY = 165 - ((height / 2) * multiplier);
+
         for(int k = 0; k < height; k++)
         {
+            int currentX = 165 - ((width / 2) * multiplier);
             for(int a = 0; a < width; a++)
             {
                 if(map[k].charAt(a) == 'n')
@@ -56,8 +69,23 @@ public class Map extends JLabel
                     backg.setColor(Color.RED);
                 }
 
-                backg.fillRect(a * 5, k * 5, 5, 5);
+                backg.fillRect(currentX, currentY, multiplier, multiplier);
+                currentX += multiplier;
             }
+            currentY += multiplier;
+        }
+
+        //print map info
+        backg.setFont(new Font("Monospaced", Font.PLAIN, 15));
+        backg.setColor(Color.BLACK);
+
+        int textX = 15;
+        int textY = 345;
+
+        for(int k = 0; k < info.length; k++)
+        {
+            backg.drawString(infoNames[k] + ": " + info[k], textX, textY);
+            textY += 17;
         }
     }
 }
