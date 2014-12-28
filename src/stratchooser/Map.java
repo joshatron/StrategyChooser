@@ -21,7 +21,7 @@ public class Map extends JLabel
         this.info = info;
 
         this.picWidth = 330;
-        this.picHeight = 330 + info.length * 17 + 20;
+        this.picHeight = 330 + info.length * 17 + 10;
         this.multiplier = 1;
         while(multiplier * width <= 300 && multiplier * height <= 300){multiplier++;}
         multiplier--;
