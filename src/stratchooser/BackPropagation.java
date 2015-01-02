@@ -9,85 +9,53 @@ public class BackPropagation
 {
     //Computes the weights for a neural net given a net architecture and set of examples.
     //Assumes network is feed forward, fully connected, and has one output.
-    public static float[] trainNet(int examples, int input, int inner, float[][] data)
+    public static double[] trainNet(int input, int inner, int output, double[][] data)
     {
         //Initialize random net weights
         Random rand = new Random();
-        float[] weights = new float[input * inner + inner];
+        double[] weights = new double[input * inner + inner * output];
         for(int k = 0; k < weights.length; k++)
         {
             weights[k] = rand.nextFloat() * 2 - 1;
         }
 
-        //Randomly choose half to be training set and other half test set
-        int[] trainExamples = new int[3 * examples / 4];
-        int[] testExamples = new int[examples - ( 3 * examples / 4)];
-
-        for(int k = 0; k < trainExamples.length; k++)
-        {
-            int newLoc = rand.nextInt(examples);
-            boolean found = false;
-            while(!found)
-            {
-                found = true;
-                for(int a = 0; a < k; a++)
-                {
-                    if(newLoc == trainExamples[a])
-                    {
-                        found = false;
-                    }
-                }
-
-                if(!found)
-                {
-                    newLoc = rand.nextInt(examples);
-                }
-            }
-
-            trainExamples[k] = newLoc;
-        }
-
-        int t = 0;
-        for(int k = 0; k < examples; k++)
-        {
-            boolean unused = true;
-            for(int a = 0; a < trainExamples.length; a++)
-            {
-                if(k == trainExamples[a])
-                {
-                    unused = false;
-                }
-            }
-
-            if(unused)
-            {
-                testExamples[t] = k;
-                t++;
-            }
-        }
-
         boolean done = false;
         while(!done)
         {
-            for(int k = 0; k < trainExamples.length; k++)
+            for(int k = 0; k < data.length; k++)
             {
-                float[] inputs = new float[input];
+                double[] inputs = new double[input];
                 for(int a = 0; a < input; a++)
                 {
-                    inputs[a] = data[trainExamples[k]][a];
+                    inputs[a] = data[k][a];
                 }
-                weights = backPropagate(input, inner, weights, inputs, data[trainExamples[k]][input]);
+                double[] expectedOutput = new double[output];
+                expectedOutput[(int)data[k][input] - 1] = 1.;
+                weights = backPropagate(input, inner, output, weights, inputs, expectedOutput);
             }
 
             done = true;
-            for(int k = 0; k < testExamples.length; k++)
+            for(int k = 0; k < data.length; k++)
             {
-                float[] inputs = new float[input];
+                double[] inputs = new double[input];
                 for(int a = 0; a < input; a++)
                 {
-                    inputs[a] = data[testExamples[k]][a];
+                    inputs[a] = data[k][a];
                 }
-                if(Math.round(runNet(input, inner, weights, inputs)) != Math.round(data[testExamples[k]][input]))
+                double[] result = runNet(input, inner, output, weights, inputs);
+                int checks = 0;
+                for(int a = 0; a < result.length; a++)
+                {
+                    if(result[a] > .75)
+                    {
+                        checks++;
+                        if(Math.round(data[k][input]) - 1 != a)
+                        {
+                            done = false;
+                        }
+                    }
+                }
+                if(checks == 0)
                 {
                     done = false;
                 }
@@ -99,31 +67,58 @@ public class BackPropagation
 
     //Update the weights of the neural net given the input, and correct output.
     //Assumes network is feed forward, fully connected, and has one output.
-    private static float[] backPropagate(int input, int inner, float[] weights,
-                                         float[] inputValues, float output)
+    private static double[] backPropagate(int input, int inner, int output, double[] weights,
+                                         double[] inputValues, double[] expectedOutput)
     {
-        float alpha = (float).0001;
+        double alpha = .001;
 
-        float[] innerValues = new float[inner];
-        float result = 0;
+        double[] innerValues = new double[inner];
+        double[] outputValues = new double[output];
 
-        //compute values
         for(int k = inner; --k >= 0;)
         {
             for(int a = input; --a >= 0;)
             {
                 innerValues[k] += inputValues[a] * weights[a * inner + k];
             }
-            result += innerValues[k] * weights[(input * inner) + k];
+            innerValues[k] = (1. / (1. + Math.pow(Math.E, innerValues[k] * -1)));
+        }
+
+        for(int k = output; --k >= 0;)
+        {
+            for(int a = inner; --a >= 0;)
+            {
+                outputValues[k] += innerValues[a] * weights[(input * inner) + a * output + k];
+            }
+            outputValues[k] = (1. / (1. + Math.pow(Math.E, outputValues[k] * -1)));
         }
 
         //compute errors
-        float outputError = output - result;
+        double[] outputError = new double[outputValues.length];
+        for(int k = 0; k < output; k++)
+        {
+            for(int a = 0; a < inner; a++)
+            {
+                outputError[k] += innerValues[a] * weights[(input * inner) + (a * output) + k];
+            }
+            outputError[k] = (Math.pow(Math.E, outputError[k]) /
+                             Math.pow(Math.pow(Math.E, outputError[k]) + 1, 2)) *
+                             (expectedOutput[k] - outputValues[k]);
+        }
 
-        float[] innerError = new float[inner];
+        double[] innerError = new double[inner];
         for(int k = 0; k < inner; k++)
         {
-            innerError[k] = weights[(input * inner) + k] * outputError;
+            double sum = 0;
+            for(int a = 0; a < input; a++)
+            {
+                sum += inputValues[a] * weights[(a * inner) + k];
+            }
+            for(int a = 0; a < output; a++)
+            {
+                innerError[k] += weights[(input * inner) + (k * output) + a] * outputError[a];
+            }
+            innerError[k] *= (Math.pow(Math.E, sum) / Math.pow(Math.pow(Math.E, sum) + 1, 2));
         }
 
         //update weights
@@ -137,18 +132,19 @@ public class BackPropagation
 
         for(int k = 0; k < inner; k++)
         {
-            weights[(input * inner) + k] += alpha * innerValues[k] * outputError;
+            for(int a = 0; a < output; a++)
+            {
+                weights[(input * inner) + (k * output) + a] += alpha * innerValues[k] * outputError[a];
+            }
         }
 
         return weights;
     }
 
-    //Compute the output of a neural network given an input, weights, and net architecture.
-    //Assumes network is feed forward, fully connected, and has one output.
-    public static float runNet(int input, int inner, float[] weights, float[] inputValues)
+    public static double[] runNet(int input, int inner, int output, double[] weights, double[] inputValues)
     {
-        float[] innerValues = new float[inner];
-        float result = 0;
+        double[] innerValues = new double[inner];
+        double[] outputValues = new double[output];
 
         for(int k = inner; --k >= 0;)
         {
@@ -156,9 +152,18 @@ public class BackPropagation
             {
                 innerValues[k] += inputValues[a] * weights[a * inner + k];
             }
-            result += innerValues[k] * weights[(input * inner) + k];
+            innerValues[k] = (1. / (1. + Math.pow(Math.E, innerValues[k] * -1)));
         }
 
-        return result;
+        for(int k = output; --k >= 0;)
+        {
+            for(int a = inner; --a >= 0;)
+            {
+                outputValues[k] += innerValues[a] * weights[(input * inner) + a * output + k];
+            }
+            outputValues[k] = (1. / (1. + Math.pow(Math.E, outputValues[k] * -1)));
+        }
+
+        return outputValues;
     }
 }

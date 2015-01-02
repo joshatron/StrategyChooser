@@ -19,7 +19,7 @@ public class Main
     private boolean next;
 
     private int spot, dataLength;
-    private float[][] data;
+    private double[][] data;
 
     public static void main(String[] args)
     {
@@ -30,6 +30,7 @@ public class Main
     {
         next = false;
         spot = 0;
+        int strategies = 0;
 
         if(configDir.charAt(configDir.length() - 1) != '/')
         {
@@ -58,7 +59,7 @@ public class Main
                 finalVariables[k] = variables[k];
             }
 
-            data = new float[1000][finalVariables.length + 1];
+            data = new double[1000][finalVariables.length + 1];
             dataLength = finalVariables.length + 1;
 
             String[] strats = new String[1000];
@@ -71,6 +72,7 @@ public class Main
                 line = in.readLine();
             }
             String[] finalStrats = new String[a];
+            strategies = finalStrats.length;
 
             for(int k = 0; k < a; k++)
             {
@@ -100,7 +102,7 @@ public class Main
                 if(line.charAt(0) != '#')
                 {
                     String[] mapData = getMap(configDir.concat(line + ".txt"));
-                    float[] mapVariables = getVars(configDir.concat(line + ".txt"), finalVariables.length);
+                    double[] mapVariables = getVars(configDir.concat(line + ".txt"), finalVariables.length);
                     for(int k = 0; k < mapVariables.length; k++)
                     {
                         data[spot][k] = mapVariables[k];
@@ -130,19 +132,17 @@ public class Main
         }
         catch(IOException e){e.printStackTrace();}
 
-        float[][] finalData = new float[spot][dataLength];
+        double[][] finalData = new double[spot][dataLength];
         for(int k = 0; k < spot; k++)
         {
             for(int a = 0; a < dataLength; a++)
             {
                 finalData[k][a] = data[k][a];
-                System.out.print(finalData[k][a] + " ");
             }
-            System.out.println();
         }
 
         System.out.println("Starting back propagation");
-        float[] weights = BackPropagation.trainNet(spot, dataLength - 1, 100, finalData);
+        double[] weights = BackPropagation.trainNet(dataLength - 1, 100, strategies, finalData);
         System.out.println("Finished back propagation");
         String output = "Net weights are: ";
         for(int k = 0; k < weights.length; k++)
@@ -154,7 +154,8 @@ public class Main
             }
         }
 
-        JOptionPane.showMessageDialog(frame, output);
+        //JOptionPane.showMessageDialog(frame, output);
+        System.out.println(output);
     }
 
     private String[] getMap(String file)
@@ -188,9 +189,9 @@ public class Main
         return null;
     }
 
-    private float[] getVars(String file, int vars)
+    private double[] getVars(String file, int vars)
     {
-        float[] toReturn = new float[vars];
+        double[] toReturn = new double[vars];
         try
         {
             BufferedReader in = new BufferedReader(new FileReader(file));

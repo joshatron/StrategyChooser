@@ -10,9 +10,9 @@ public class Map extends JLabel
 {
     private int width, height, picWidth, picHeight, multiplier;
     private String[] map, infoNames;
-    private float[] info;
+    private double[] info;
 
-    public Map(String[] map, int width, int height, String[] infoNames, float[] info)
+    public Map(String[] map, int width, int height, String[] infoNames, double[] info)
     {
         this.map = map;
         this.width = width;
